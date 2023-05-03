@@ -309,7 +309,7 @@ mod tests {
          (#2)))
     );
 
-    type Op = computation!(
+    type Program = computation!(
       (set 1 (Add (6) (5)))
       (if (= (Add (6) (5)) (Add (5) (6)))
         ((set 1 (Factorial (5))))
@@ -319,6 +319,6 @@ mod tests {
 
     #[test]
     fn test_function() {
-        assert_eq!(run::<Op>(), 120);
+        assert_eq!(run::<Program>(), 120);
     }
 }

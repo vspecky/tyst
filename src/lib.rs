@@ -169,86 +169,108 @@ where
 }
 
 #[macro_export]
-macro_rules! op {
-    (set $var:literal ($($inner:tt)+)) => {
-        $crate::SetVar<$var, $crate::op!($($inner)+)>
+macro_rules! seq_body {
+    (($(($($op:tt)+))+)) => {
+        $crate::computation!($(($($op)+))+)
     };
 
-    (if ($($cond:tt)+) ($(($($then:tt)+))+) ($(($($else:tt)+))+)) => {
+    (($($op:tt)+)) => {
+        $crate::op!($($op)+)
+    };
+}
+
+#[macro_export]
+macro_rules! arg_expand {
+    (($($op:tt)+)) => {
+        $crate::op!($($op)+)
+    };
+
+    ($op:tt) => {
+        $crate::op!($op)
+    };
+}
+
+#[macro_export]
+macro_rules! op {
+    (set $var:literal $inner:tt) => {
+        $crate::SetVar<$var, $crate::arg_expand!($inner)>
+    };
+
+    (get $var:literal) => {
+        $crate::GetVar<$var>
+    };
+
+    (if $cond:tt $then:tt $else:tt) => {
         $crate::IfElse<
-            $crate::op!($($cond)+),
-            $crate::computation!($(($($then)+))+),
-            $crate::computation!($(($($else)+))+)
+            $crate::arg_expand!($cond),
+            $crate::seq_body!($then),
+            $crate::seq_body!($else)
         >
     };
 
-    (+ ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Add<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (+ $lhs:tt $rhs:tt) => {
+        $crate::Add<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (- ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Sub<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (- $lhs:tt $rhs:tt) => {
+        $crate::Sub<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (* ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Mul<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (* $lhs:tt $rhs:tt) => {
+        $crate::Mul<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (/ ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Div<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (/ $lhs:tt $rhs:tt) => {
+        $crate::Div<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (& ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::BitAnd<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (& $lhs:tt $rhs:tt) => {
+        $crate::BitAnd<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (| ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::BitOr<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (| $lhs:tt $rhs:tt) => {
+        $crate::BitOr<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (> ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Gt<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (> $lhs:tt $rhs:tt) => {
+        $crate::Gt<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (>= ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Gte<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (>= $lhs:tt $rhs:tt) => {
+        $crate::Gte<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (< ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Lt<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (< $lhs:tt $rhs:tt) => {
+        $crate::Lt<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (<= ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Lte<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (<= $lhs:tt $rhs:tt) => {
+        $crate::Lte<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (= ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::Equ<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (= $lhs:tt $rhs:tt) => {
+        $crate::Equ<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (&& ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::And<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (&& $lhs:tt $rhs:tt) => {
+        $crate::And<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (|| ($($lhs:tt)+) ($($rhs:tt)+)) => {
-        $crate::And<$crate::op!($($lhs)+), $crate::op!($($rhs)+)>
+    (|| $lhs:tt $rhs:tt) => {
+        $crate::Or<$crate::arg_expand!($lhs), $crate::arg_expand!($rhs)>
     };
 
-    (range $var:literal ($($from:tt)+) ($($to:tt)+) ($(($($body_t:tt)+))+)) => {
+    (range $var:literal $from:tt $to:tt $body:tt) => {
         $crate::Range<
             $var,
-            $crate::op!($($from)+),
-            $crate::op!($($to)+),
-            $crate::computation!($(($($body_t)+))+)
+            $crate::arg_expand!($from),
+            $crate::arg_expand!($to),
+            $crate::seq_body!($body)
         >
     };
 
-    ($func:ident $(($($op:tt)+))*) => {
-        $func<$($crate::op!($($op)+)),*>
-    };
-
-    (#$v:literal) => {
-        $crate::GetVar<$v>
+    ($func:ident $($arg:tt)*) => {
+        $func<$($crate::arg_expand!($arg)),*>
     };
 
     ($i:literal) => {
@@ -269,7 +291,7 @@ macro_rules! computation {
 
 #[macro_export]
 macro_rules! func {
-    (($vis:vis $name:ident ($($arg:ident:$var:literal)*) ($(($($op:tt)+))+))) => {
+    (($vis:vis $name:ident ($($arg:ident:$var:literal)*) $body:tt)) => {
         $vis struct $name<$($arg),*>($(std::marker::PhantomData<$arg>),+);
 
         impl<$($arg: $crate::Computation),*> $crate::Computation for $name<$($arg),*> {
@@ -279,7 +301,7 @@ macro_rules! func {
                     new_map.insert($var, $arg::compute(vars));
                 )*
 
-                type Exec = $crate::computation!($(($($op)+))+);
+                type Exec = $crate::seq_body!($body);
 
                 Exec::compute(&mut new_map)
             }
@@ -296,29 +318,40 @@ pub fn run<T: Computation>() -> isize {
 mod tests {
     use super::*;
 
-    func!(
-      (Add (A:1 B:2)
-        ((+ (#1) (#2))))
-    );
+    #[test]
+    fn test_factorial() {
+        func!(
+          (AddCustom (A:1 B:2) (+ (get 1) (get 2)))
+        );
 
-    func!(
-      (Factorial (N:1)
-        ((set 2 (1))
-         (range 3 (1) (Add (#1) (1))
-           ((set 2 (* (#3) (#2)))))
-         (#2)))
-    );
+        func!(
+          (Factorial (N:1)
+            ((set 2 1)
+             (range 3 1 (AddCustom (get 1) 1)
+               (set 2 (* (get 3) (get 2))))
+             (get 2)))
+        );
 
-    type Program = computation!(
-      (set 1 (Add (6) (5)))
-      (if (= (Add (6) (5)) (Add (5) (6)))
-        ((set 1 (Factorial (5))))
-        ((set 1 (Factorial (6)))))
-      (#1)
-    );
+        type Program = computation!(
+          (set 1 (AddCustom 6 5))
+          (if (= (AddCustom 6 5) (Add 5 6))
+            (set 1 (Factorial 5))
+            (set 1 (Factorial 6)))
+          (get 1)
+        );
+        assert_eq!(run::<Program>(), 120);
+    }
 
     #[test]
-    fn test_function() {
-        assert_eq!(run::<Program>(), 120);
+    fn test_fibonacci() {
+        func!(
+          (Fibonacci (N:1)
+            (if (< (get 1) 2)
+              (1)
+              (+ (Fibonacci (- (get 1) 1)) (Fibonacci (- (get 1) 2)))))
+        );
+
+        type Program = op!(Fibonacci 10);
+        assert_eq!(run::<Program>(), 89);
     }
 }
